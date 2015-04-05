@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:net="codeghost.livecast.net.server.*"
+			   xmlns:settings="codeghost.livecast.mobile.persistence.*"
+			   xmlns:ui="codeghost.livecast.mobile.ui.*"
+			   preinitialize="preinitializeHandler(event)"
+			   creationComplete="setup(event)"
+			   applicationComplete="appComplete(event)"
+			   splashScreenImage="DynamicSplashScreen"
+			   splashScreenScaleMode="zoom"
+			   applicationDPI="160" xmlns:local="*">
+	<fx:Script>
+		<![CDATA[
+			import codeghost.livecast.mobile.persistence.SettingsManager;
+			import codeghost.livecast.mobile.ui.UIManager;
+			import codeghost.livecast.mycast.MyCastConnectionSettings;
+			import codeghost.livecast.net.service.ConnectionSettings;
+			import codeghost.livecast.net.service.LogManager;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.events.TextOperationEvent;
+			
+			[Bindable] private var uiMgr:UIManager;
+			private var settingsMgr:SettingsManager;
+			private var connectionSettings:ConnectionSettings;
+			private var previousState:String;
+			
+			protected function preinitializeHandler(event:FlexEvent):void
+			{
+				settingsMgr = new SettingsManager();
+				connectionSettings = new MyCastConnectionSettings(settingsMgr);
+				uiMgr = new UIManager(connectionSettings);
+				uiMgr.preinit(event);
+			}
+			
+			protected function setup(event:FlexEvent):void
+			{
+				uiMgr.configureDisplay();
+				uiMgr.setDeviceId("matt");
+				currentState = "default";
+			}
+			
+			private var webView:StageWebView;
+			
+			protected function appComplete(event:FlexEvent):void
+			{
+				addElementAt(uiMgr.videoContainer, 0);
+				LogManager.getInstance().log("Application launch complete");
+			}
+			
+			private function errorChanging(event:ErrorEvent):void {
+				/*
+				* iOS does not allow the URL scheme to event be attempted and throws an error
+				* Catch the error and parse out the URL we were going to attempt.
+				*/
+				if(event.text.indexOf("codeghost.encoder://")!=-1) {
+					parseLaunchParams(event.text.substr(event.text.indexOf("codeghost.encoder://"), event.text.length));
+				} else {
+					trace(event.text);
+				}
+			}
+			
+			private function locationChanging(event:LocationChangeEvent):void {
+				/*
+				* Android does not allow the URL scheme to be followed, but will fire the LocationChangeEvent first.
+				* We'll intercept it here.
+				*/
+				if(event.location.substr(0, 20)=="codeghost.encoder://") {
+					parseLaunchParams(event.location);
+				}
+			}
+			
+			private function parseLaunchParams(params:String):void {
+				/*
+				* Parse the param string we received and remove the webview
+				*/
+				trace(params);
+				
+				var args:Array = params.substr(19, params.length).split("&");
+				if(args.length==2) {
+					for (var i:int = 0; i < args.length; i++) 
+					{
+						switch(i) {
+							case 0: uiMgr.launchDeviceId = args[i].substr(args[i].indexOf("//")+2);
+								break;
+							case 1: uiMgr.launchMediaServer = args[i];
+								break;
+						}
+					}
+				}
+				webView.viewPort = null;
+				webView.dispose();
+				webView = null;
+				
+				currentState = "default";
+				addElementAt(uiMgr.videoContainer, 0);
+			}
+			
+			private function toggleSettings(event:TouchEvent):void {
+				previousState=currentState;
+				currentState=currentState=='default'?'settings':'default';
+				addElementAt(uiMgr.videoContainer, 0);
+			}
+			
+			protected function host_changeHandler(event:FocusEvent):void
+			{
+				LogManager.getInstance().log("Changing Host to " + host.text);
+				settingsMgr.setProperty("settings.host", host.text);
+			}
+			
+			protected function app_changeHandler(event:FocusEvent):void
+			{
+				LogManager.getInstance().log("Changing App to " + app.text);
+				settingsMgr.setProperty("settings.app", app.text);
+			}
+			
+			protected function stream_changeHandler(event:FocusEvent):void
+			{
+				LogManager.getInstance().log("Changing Stream to " + stream.text);
+				connectionSettings.setStreamId(stream.text);
+			}
+			
+			protected function username_changeHandler(event:FocusEvent):void
+			{
+				LogManager.getInstance().log("Changing Username to " + username.text);
+				settingsMgr.setProperty("settings.username", username.text);
+			}
+			
+			protected function password_changeHandler(event:FocusEvent):void
+			{
+				LogManager.getInstance().log("Changing Password");
+				settingsMgr.setProperty("settings.password", password.text);
+			}
+			
+			protected function publish_clickHandler(event:MouseEvent):void
+			{
+				LogManager.getInstance().log("Changing to Publish stream type");
+				settingsMgr.setProperty("settings.publish", true);
+			}
+			
+			protected function play_clickHandler(event:MouseEvent):void
+			{
+				LogManager.getInstance().log("Changing to Play stream type");
+				settingsMgr.setProperty("settings.publish", null);				
+			}
+			
+			protected function populateSettings(event:FlexEvent):void
+			{
+				host.text = connectionSettings.repositoryURL();
+				app.text = MyCastConnectionSettings(connectionSettings).app();
+				stream.text = connectionSettings.streamId();
+				username.text = MyCastConnectionSettings(connectionSettings).username();
+				password.text = MyCastConnectionSettings(connectionSettings).password();
+				publish.selected = MyCastConnectionSettings(connectionSettings).publish();
+				play.selected = !publish.selected;				
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="default"/>
+		<s:State name="unknownUser"/>
+		<s:State name="replaceUser"/>
+		<s:State name="errorExpiredToken"/>
+		<s:State name="errorUnknownDevice"/>
+		<s:State name="streaming"/>
+		<s:State name="logs"/>
+		<s:State name="settings"/>
+	</s:states>
+	
+	<s:Scroller width="100%" top="75" bottom="0" includeIn="settings"> 
+		<s:VGroup paddingTop="5" paddingLeft="5" paddingRight="5" paddingBottom="10" width="100%">
+			<s:Group width="100%" height="100%" creationComplete="populateSettings(event)">
+				<s:Rect id="settingsBG" left="5" right="65" top="0" height="210" alpha=".65">
+					<s:fill>
+						<s:SolidColor color="#000000"/>
+					</s:fill>
+				</s:Rect>
+				<s:TextInput id="host" left="10" right="70" top="5" autoCapitalize="none"
+							 autoCorrect="false" editable="true" enabled="true"
+							 focusOut="host_changeHandler(event)"
+							 prompt="Host (e.g. rtmp://192.168.1.10:1935)" returnKeyLabel="done"
+							 selectable="false" showPromptWhenFocused="false" softKeyboardType="url"
+							 skinClass="spark.skins.mobile.TextInputSkin"/>
+				<s:TextInput id="app" left="10" right="70" top="45" autoCapitalize="none"
+							 autoCorrect="false" editable="true" enabled="true"
+							 focusOut="app_changeHandler(event)"
+							 prompt="Path to Application (e.g. /live)" returnKeyLabel="done"
+							 showPromptWhenFocused="false"
+							 skinClass="spark.skins.mobile.TextInputSkin"/>
+				<s:TextInput id="stream" left="10" right="70" top="85" autoCapitalize="none"
+							 autoCorrect="false" editable="true" enabled="true"
+							 focusOut="stream_changeHandler(event)" prompt="Stream Name"
+							 returnKeyLabel="done" showPromptWhenFocused="false"
+							 skinClass="spark.skins.mobile.TextInputSkin"/>
+				<s:TextInput id="username" left="10" top="125" width="45%" autoCapitalize="none"
+							 autoCorrect="false" editable="true" enabled="true" prompt="Username"
+							 returnKeyLabel="done" showPromptWhenFocused="false" focusOut="username_changeHandler(event)"
+							 skinClass="spark.skins.mobile.TextInputSkin"/>
+				<s:TextInput id="password" right="70" top="125" width="45%" autoCapitalize="none"
+							 autoCorrect="false" displayAsPassword="true" editable="true"
+							 enabled="true" prompt="Password" returnKeyLabel="done"
+							 showPromptWhenFocused="false" focusOut="password_changeHandler(event)"
+							 skinClass="spark.skins.mobile.TextInputSkin"/>
+				<s:RadioButton id="publish" x="10" y="169" left="10" top="170" label="Publish"
+							   color="#FFFFFF" selected="true" click="publish_clickHandler(event)" />
+				<s:RadioButton id="play" x="120" y="169" left="120" top="170" label="Play"
+							   color="#FFFFFF" selected="false" click="play_clickHandler(event)"/>
+			</s:Group>
+		</s:VGroup>
+	</s:Scroller>
+	
+	<s:Rect id="background" right="0" top="0" bottom="0" width="55" alpha=".65" includeIn="default,settings">
+		<s:fill>
+			<s:SolidColor color="#000000"/>
+		</s:fill>
+	</s:Rect>
+	<s:Rect id="background0" right="55" top="0" width="150" height="55" alpha=".65" includeIn="default,settings">
+		<s:fill>
+			<s:SolidColor color="#000000"/>
+		</s:fill>
+	</s:Rect>
+	
+	<s:Image id="settingsButton" right="155" top="5" width="45" height="45" scaleMode="stretch"
+			 smooth="true" smoothingQuality="high" source="assets/settings-45.png" includeIn="default,settings"
+			 touchTap="toggleSettings(event)"/>
+	<s:Image id="switchCameraButton" right="5" bottom="100" height="45" scaleMode="stretch"
+			 smooth="true" smoothingQuality="high" source="assets/camera-white.png"
+			 includeIn="default,settings" touchTap="{uiMgr.switchCamera(event)}"/>
+	<s:Image id="recordButton" right="5" bottom="5" width="45" height="45" alpha="{uiMgr.recordButtonAlpha}"
+			 scaleMode="stretch" smooth="true" smoothingQuality="high"
+			 source="assets/2d-record-45.png" includeIn="default,settings" touchTap="{uiMgr.recordHandler(event)}"/>
+	<s:Image id="server" includeIn="default,settings,streaming" left="5" top="5" width="45" height="45"
+			 alpha="0.5" scaleMode="stretch" smooth="true" smoothingQuality="high"
+			 source="{uiMgr.connectionSvc.streaming?'assets/server-connected.png':'assets/server-disconnected.png'}"
+			 touchTap="{previousState=currentState; currentState='logs'}"/>
+	<s:Image id="connectionStrength" includeIn="default,settings" left="55" top="5" width="45" height="45" alpha="0.5"
+			 scaleMode="stretch" smooth="true" smoothingQuality="high" 
+			 source="{uiMgr.connectionSvc.connectionStrength}"/>
+	<s:Image id="muteButtonOn" right="-5" bottom="60" scaleMode="stretch" smooth="true" smoothingQuality="high"
+			 source="assets/2dsoundOn.png" includeIn="default,settings" visible="{!uiMgr.muted}" touchTap="{uiMgr.toggleMute(event)}"/>
+	<s:Image id="muteButtonOff" visible="{uiMgr.muted}" right="5" bottom="60" scaleMode="stretch"
+			 smooth="true" smoothingQuality="high" source="assets/2dsoundOff.png"
+			 includeIn="default,settings" touchTap="{uiMgr.toggleMute(event)}"/>
+	<s:Label id="lowResLabel" includeIn="default,settings" right="112" top="9" alpha="{uiMgr.lowResAlpha}" color="#FFFFFF"
+			 fontSize="18" fontWeight="bold" text="160&#xd;120"/>
+	<s:Label id="mediumResLabel" includeIn="default,settings" right="62" top="9" alpha="{uiMgr.medResAlpha}" color="#ffffff"
+			 fontSize="18" fontWeight="bold" text="320&#xd;240"/>
+	<s:Label id="highResLabel" includeIn="default,settings" right="12" top="9" alpha="{uiMgr.higResAlpha}" color="#ffffff"
+			 fontSize="18" fontWeight="bold" text="640&#xd;480"/>
+	<s:Image id="mediumRes" visible="true" right="55" top="5" scaleMode="stretch" smooth="true" alpha="{uiMgr.medResAlpha}"
+			 smoothingQuality="high" source="assets/resolution-square-45.png"
+			 includeIn="default,settings" touchTap="{uiMgr.resolutionHandler(event)}"/>
+	<s:Image id="highRes" visible="true" right="5" top="5" alpha="{uiMgr.higResAlpha}" scaleMode="stretch"
+			 smooth="true" smoothingQuality="high" source="assets/resolution-square-45.png"
+			 includeIn="default,settings" touchTap="{uiMgr.resolutionHandler(event)}"/>
+	<s:Image id="lowRes" visible="true" right="105" top="5" alpha="{uiMgr.lowResAlpha}" scaleMode="stretch"
+			 smooth="true" smoothingQuality="high" source="assets/resolution-square-45.png"
+			 includeIn="default,settings" touchTap="{uiMgr.resolutionHandler(event)}"/>
+	<s:Image id="increaseButton" includeIn="default,settings" right="10" top="65" width="35" height="20"
+			 scaleMode="stretch" smooth="true" smoothingQuality="high" enabled="{uiMgr.increaseFpsEnabled}"
+			 source="assets/up-arrow.png" touchTap="{uiMgr.increaseFps(event)}"/>
+	<s:Image id="decreaseButton" right="10" top="110" width="35" height="20" scaleMode="stretch" smooth="true"
+			 smoothingQuality="high" source="assets/down-arrow.png" includeIn="default,settings" touchTap="{uiMgr.decreaseFps(event)}"
+			 enabled="{uiMgr.decreaseFpsEnabled}"/>
+	<s:Label id="fpsLabel" includeIn="default,settings" right="6" top="90" color="#ffffff" fontWeight="normal"
+			 text="{uiMgr.fps + 'fps'}"/>
+	<s:Rect id="loginBackground" left="0" right="0" width="100%" height="100%" alpha="0.65" horizontalCenter="0"
+			verticalCenter="0" includeIn="errorExpiredToken,errorUnknownDevice,logs,replaceUser,unknownUser">
+		<s:fill>
+			<s:SolidColor color="#000000"/>
+		</s:fill>
+	</s:Rect>
+	<s:Label includeIn="errorExpiredToken,errorUnknownDevice,replaceUser" fontSize="12"
+			 fontWeight="normal" horizontalCenter="0" textAlign="left" verticalAlign="middle"
+			 text.errorExpiredToken="This handset has not been authorised. &#xd;The token associated with this handset is invalid.&#xd;&#xd;Please contact your administrator to have a new token &#xd;added to your account and relaunch the application."
+			 verticalCenter.errorExpiredToken="0"
+			 text.errorUnknownDevice="This handset has not been authorised. &#xd;The token associated with this handset is invalid.&#xd;&#xd;Please contact your administrator to have a new token &#xd;added to your account and relaunch the application."
+			 verticalCenter.errorUnknownDevice="0"
+			 top.replaceUser="100" horizontalCenter.replaceUser="0"
+			 text.replaceUser="You are attempting to update the user credentials stored for this device.&#xd;Each handset can only be linked to a single account and the current &#xd;connection will be lost if you continue.&#xd;&#xd;Please confirm if you would like to replace the user reference on this device?"/>
+	<s:Button includeIn="replaceUser" bottom="50" width="50" label="Yes" 
+			  horizontalCenter="-40"/>
+	<s:Button includeIn="replaceUser" bottom="50" width="50" label="No" 
+			  horizontalCenter="40"/>
+	<s:List id="logList" includeIn="logs" left="0" right="0" top="0" bottom="50" dataProvider="{LogManager.getInstance().readAll()}" />
+	<s:Button includeIn="logs" left="0" right="0" bottom="0" height="50" label="Close Logs"
+			  color="#000000" fontFamily="Arial" fontSize="16"
+			  touchTap="{currentState=previousState;addElementAt(uiMgr.videoContainer, 0);}"/>
+	
+</s:Application>

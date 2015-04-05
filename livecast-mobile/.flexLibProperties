@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<flexLibProperties includeAllClasses="true" useMultiPlatformConfig="true" version="3">
+  <includeClasses>
+    <classEntry path="codeghost.livecast.mobile.persistence.SettingsManager"/>
+    <classEntry path="codeghost.livecast.mobile.ui.IResolution"/>
+    <classEntry path="codeghost.livecast.mobile.ui.DefaultHighResolution"/>
+    <classEntry path="codeghost.livecast.mobile.ui.UIManager"/>
+    <classEntry path="codeghost.livecast.mobile.ui.Resolution"/>
+  </includeClasses>
+  <includeResources/>
+  <namespaceManifests/>
+</flexLibProperties>

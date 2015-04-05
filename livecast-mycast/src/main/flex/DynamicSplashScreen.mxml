@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SplashScreenImage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					 xmlns:s="library://ns.adobe.com/flex/spark">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:SplashScreenImageSource dpi="160" aspectRatio="landscape" source="@Embed('assets/launch/launch-1024x768.png')"/>
+	<s:SplashScreenImageSource dpi="240" aspectRatio="landscape" source="@Embed('assets/launch/launch-810x480.png')"/>
+	<s:SplashScreenImageSource dpi="320" aspectRatio="landscape" source="@Embed('assets/launch/launch-960x640.png')" />
+	<s:SplashScreenImageSource dpi="320" minResolution="1136" aspectRatio="landscape" source="@Embed('assets/launch/Default-568h@2x.png')" />
+</s:SplashScreenImage>

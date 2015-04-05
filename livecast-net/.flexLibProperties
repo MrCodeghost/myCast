@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<flexLibProperties includeAllClasses="true" useMultiPlatformConfig="false" version="3">
+  <includeClasses>
+    <classEntry path="codeghost.livecast.net.service.ConnectionService"/>
+    <classEntry path="codeghost.livecast.net.service.ConnectionSettings"/>
+    <classEntry path="codeghost.livecast.net.media.MediaManager"/>
+    <classEntry path="codeghost.livecast.net.media.CameraSettings"/>
+    <classEntry path="codeghost.livecast.net.media.MicrophoneSettings"/>
+    <classEntry path="codeghost.livecast.net.media.DefaultCameraSettings"/>
+    <classEntry path="codeghost.livecast.net.media.DefaultMicrophoneSettings"/>
+    <classEntry path="codeghost.livecast.net.service.ReconnectHandler"/>
+    <classEntry path="codeghost.livecast.net.service.LogManager"/>
+  </includeClasses>
+  <includeResources/>
+  <namespaceManifests/>
+</flexLibProperties>
