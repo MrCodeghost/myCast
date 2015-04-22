@@ -35,4 +35,3 @@ If you're looking for the prebuilt app ready to install it is available for free
 
 ### Support this project ###
 If you find this project useful, please consider making a donation to help support the work.
-
