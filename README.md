@@ -32,6 +32,3 @@ If you're looking for the prebuilt app ready to install it is available for free
 ### License ###
 
 * See the [LICENSE](https://bitbucket.org/codeghost/mycast/src/2c1eb27fcdaa5d573cc3994b92d6dde261d7b342/COPYING?at=master) file
-
-### Support this project ###
-If you find this project useful, please consider making a donation to help support the work.
