@@ -7,15 +7,16 @@ Videos are streamed using the FLV media container to provide low bandwidth capab
 During live streams you maintain control over the resolution, and frames per second of the live stream, with realtime feedback provided via a simple traffic light colour coded wireless icon, allowing you to know how reliably your stream is being sent. Additionally, you can switch between front and rear cameras as well as mute the audio. All these settings are available during live streaming, leaving you with complete control.
 
 Features
-★ Multi-Resolution Support (640 x 480 / 320 x 240 / 160 x 120)
-★ Front & Rear Camera switching where supported
-★ Adjust Frames Per Second
-★ Mute to prevent audio publish
-★ Publish & Play (a single handset can only publish or receive at any one time, multiple handsets, or a Flash player in a web browser will be required to view the stream without an additional handset).
-★ Able to accept a redirect URL in a NetConnection.Connect.Rejected event.info.ex.redirect response property to allow for use with load balanced media servers
-★ Tap the server connection icon to view connection logs
 
-* Recording of a stream is managed by the media server configuration.
+* Multi-Resolution Support (640 x 480 / 320 x 240 / 160 x 120)
+* Front & Rear Camera switching where supported
+* Adjust Frames Per Second
+* Mute to prevent audio publish
+* Publish & Play (a single handset can only publish or receive at any one time, multiple handsets, or a Flash player in a web browser will be required to view the stream without an additional handset).
+* Able to accept a redirect URL in a NetConnection.Connect.Rejected event.info.ex.redirect response property to allow for use with load balanced media servers
+* Tap the server connection icon to view connection logs
+
+*Recording of a stream is managed by the media server configuration.
 
 Notes
 - This application is intended for users who already have access to a streaming media server that supports the FLV container. There is no public streaming service currently provided by the developer.
